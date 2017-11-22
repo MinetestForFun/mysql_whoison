@@ -200,24 +200,24 @@ function thismod.get_time_online(name)
 end
 
 function thismod.update_lastrecord_time()
+  LogV("Updating lastrecord times")
   conn:query('START TRANSACTION')
   update_record_params:set(1, math.floor(os.time()))
   for _, player in ipairs(minetest.get_connected_players()) do
     local name = player:get_player_name()
-    local auth = minetest.get_auth_handler().get_auth(name)
-    update_record_params:set(2, auth.userid)
-      local success, msg = pcall(update_record_stmt.exec.exec, update_record_stmt.exec)
-      if not success then
-        LogE("Failed to update " .. name .. " logged-in record: " .. msg)
-        conn:rollback()
-        error(msg)
-      end
-      if update_record_stmt.exec:affected_rows() ~= 1 then
-        LogE("Failed to update " .. name .. " logged-in record: affected row count is " ..
-              update_record_stmt.exec:affected_rows() .. ", expected 1")
-        conn:rollback()
-        error(msg)
-      end
+    update_record_params:set(2, thismod.logentrymap[name][2])
+    local success, msg = pcall(update_record_stmt.exec, update_record_stmt)
+    if not success then
+      LogE("Failed to update " .. name .. " logged-in record: " .. msg)
+      conn:rollback()
+      error(msg)
+    end
+    if update_record_stmt:affected_rows() ~= 1 then
+      LogE("Failed to update " .. name .. " logged-in record: affected row count is " ..
+            update_record_stmt:affected_rows() .. ", expected 1")
+      conn:rollback()
+      error(msg)
+    end
   end
   conn:commit()
 end
@@ -379,3 +379,10 @@ mysql_base.register_on_shutdown(function ()
 end)
 
 dofile(modpath .. '/interface.lua')
+
+local interval = 150
+local function lastrecord_loop()
+  thismod.update_lastrecord_time()
+  minetest.after(interval, lastrecord_loop)
+end
+minetest.after(interval, lastrecord_loop)
