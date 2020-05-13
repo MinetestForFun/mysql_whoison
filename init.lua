@@ -1,5 +1,5 @@
 local modname = minetest.get_current_modname()
-local modpath = minetest.get_modpath(modname) 
+local modpath = minetest.get_modpath(modname)
 
 local thismod = {}
 _G[modname] = thismod
@@ -130,7 +130,7 @@ local fix_connection_stmt, fix_connection_params = mysql_base.prepare_update(
   {S.logout_reason, S.logout_reason_type},
   {S.committed, value = 1},
 }, S.id .. '=?', {S.id_type})
-local select_uncommitted_stmt, select_uncommitted_params, select_uncommitted_result =
+local _, select_uncommitted_params, _ =
   mysql_base.prepare_select(
   tables.whoison_logs.name, {
   {S.id, S.id_type},
@@ -140,7 +140,7 @@ local select_uncommitted_stmt, select_uncommitted_params, select_uncommitted_res
 -- Totals table existence check and setup
 if not mysql_base.table_exists(tables.whoison_totals.name) then
   -- Totals table doesn't exist, create it
-  local S = tables.whoison_totals.schema
+  S = tables.whoison_totals.schema
   mysql_base.create_table(tables.whoison_totals.name, {
     columns = {
       {S.userid, S.userid_type, notnull = true},
